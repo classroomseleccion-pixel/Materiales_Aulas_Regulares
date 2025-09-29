@@ -171,17 +171,21 @@
       });
     }
 
-    // Cargar desde Google Sheets
-    async function cargarDesdeSheets() {
-      let res = await fetch(SCRIPT_URL);
-      let data = await res.json();
-      estado = {};
-      data.forEach(item => {
-        const key = `${item.tomo}-${item.materia}-${item.grado}-${item.index}`;
-        estado[key] = item.seleccionado === "true" || item.seleccionado === true;
-      });
-      construirTabla();
+    // Cargar desde Google Sheets filtrando por tomo actual
+async function cargarDesdeSheets() {
+  let res = await fetch(SCRIPT_URL);
+  let data = await res.json();
+
+  estado = {};
+  data.forEach(item => {
+    if (item.tomo === tomoActual) {
+      const key = `${item.tomo}-${item.materia}-${item.grado}-${item.index}`;
+      estado[key] = item.seleccionado === "true" || item.seleccionado === true;
     }
+  });
+
+  construirTabla();
+}
 
     // Actualizar avance al marcar/desmarcar
     function actualizarAvance(e) {
