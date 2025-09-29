@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -35,7 +36,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     th, td {
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #ddd;
       text-align: center;
       vertical-align: middle;
@@ -48,6 +49,18 @@
     .avance {
       font-weight: bold;
       color: #2980b9;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+    label {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
   </style>
 </head>
@@ -83,37 +96,46 @@
   </table>
 
   <script>
-    // 🔹 URL de tu Apps Script desplegado
+    // Cambia por la URL de tu Apps Script publicado como webapp
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4LsHQqmfnERkpV4leiWPfIiN4OAlmIdirfEgQICRkBE2TVV1fuQ_XShl8LUw0qDGMAQ/exec";
 
-    // Estructura de materias y casillas habilitadas
     const materias = [
-     { nombre: "ECONOMÍA", grados: [0,0,1,1,1] },
-    { nombre: "GEOGRAFÍA", grados: [1,1,1,1,1] },
-    { nombre: "HISTORIA_DEL_PERÚ", grados: [1,1,1,1,1] },
-    { nombre: "HISTORIA_UNIVERSAL", grados: [0,0,1,1,1] },
-    { nombre: "PSICOLOGIA", grados: [0,0,1,1,1] },
-    { nombre: "VALORES", grados: [1,1,0,0,0] },
-    { nombre: "FORTALECIENDO MI FE", grados: [1,1,1,1,1] },
-    { nombre: "LENGUAJE", grados: [1,1,1,1,1] },
-    { nombre: "LITERATURA", grados: [1,1,1,1,1] },
-    { nombre: "RAZONAMIENTO_VERBAL", grados: [1,1,1,1,2] },
-    { nombre: "TEATRO", grados: [1,1,0,0,0] },
-    { nombre: "TUTORIA", grados: [1,1,1,1,1] },
-    { nombre: "BIOLOGÍA", grados: [1,1,1,1,1] },
-    { nombre: "FÍSICA", grados: [1,1,1,1,1] },
-    { nombre: "QUÍMICA", grados: [1,1,1,1,1] },
-    { nombre: "ÁLGEBRA", grados: [1,2,1,1,1] },
-    { nombre: "ARITMÉTICA", grados: [2,1,1,1,1] },
-    { nombre: "GEOMETRÍA", grados: [1,1,1,1,1] },
-    { nombre: "RAZONAMIENTO MATEMÁTICO", grados: [1,1,1,1,1] },
-    { nombre: "TRIGONOMETRÍA", grados: [1,1,1,1,1] }
+      { nombre: "ECONOMÍA", grados: [0,0,1,1,1] },
+      { nombre: "GEOGRAFÍA", grados: [1,1,1,1,1] },
+      { nombre: "HISTORIA_DEL_PERÚ", grados: [1,1,1,1,1] },
+      { nombre: "HISTORIA_UNIVERSAL", grados: [0,0,1,1,1] },
+      { nombre: "PSICOLOGIA", grados: [0,0,1,1,1] },
+      { nombre: "VALORES", grados: [1,1,0,0,0] },
+      { nombre: "FORTALECIENDO MI FE", grados: [1,1,1,1,1] },
+      { nombre: "LENGUAJE", grados: [1,1,1,1,1] },
+      { nombre: "LITERATURA", grados: [1,1,1,1,1] },
+      { nombre: "RAZONAMIENTO_VERBAL", grados: [1,1,1,1,2] },
+      { nombre: "TEATRO", grados: [1,1,0,0,0] },
+      { nombre: "TUTORIA", grados: [1,1,1,1,1] },
+      { nombre: "BIOLOGÍA", grados: [1,1,1,1,1] },
+      { nombre: "FÍSICA", grados: [1,1,1,1,1] },
+      { nombre: "QUÍMICA", grados: [1,1,1,1,1] },
+      { nombre: "ÁLGEBRA", grados: [1,2,1,1,1] },
+      { nombre: "ARITMÉTICA", grados: [2,1,1,1,1] },
+      { nombre: "GEOMETRÍA", grados: [1,1,1,1,1] },
+      { nombre: "RAZONAMIENTO MATEMÁTICO", grados: [1,1,1,1,1] },
+      { nombre: "TRIGONOMETRÍA", grados: [1,1,1,1,1] }
     ];
 
     let tomoActual = "I";
-    let estado = {}; // { tomo-materia-grado-index: true/false }
+    let estado = {}; // { tomo-materia-grado-capitulo: true/false }
 
-    // Construir tabla dinámicamente
+    function capitulosPorTomo(tomo) {
+      const index = ["I","II","III","IV","V","VI","VII","VIII"].indexOf(tomo);
+      const capInicio = index * 3 + 1;
+      return [
+        { cap: "Cap " + capInicio, tipo: "Capitulo" },
+        { cap: "Cap " + (capInicio+1), tipo: "Capitulo" },
+        { cap: "Cap " + (capInicio+2), tipo: "Capitulo" },
+        { cap: "Retro " + tomo, tipo: "Retro" }
+      ];
+    }
+
     function construirTabla() {
       const tbody = document.querySelector("#tablaAvance tbody");
       tbody.innerHTML = "";
@@ -124,90 +146,94 @@
         tdMateria.textContent = materia.nombre;
         tr.appendChild(tdMateria);
 
-        let totalCasillas = 0;
-        let seleccionadas = 0;
+        let total = 0, seleccionadas = 0;
 
-        materia.grados.forEach((num, grado) => {
+        materia.grados.forEach((num, gradoIdx) => {
           const td = document.createElement("td");
-          td.style.textAlign = "center";
           if (num > 0) {
-            for (let i = 1; i <= num; i++) {
+            const caps = capitulosPorTomo(tomoActual);
+            const group = document.createElement("div");
+            group.className = "checkbox-group";
+            caps.forEach(c => {
+              const key = `${tomoActual}-${materia.nombre}-${gradoIdx+1}-${c.cap}`;
               const checkbox = document.createElement("input");
               checkbox.type = "checkbox";
               checkbox.dataset.materia = materia.nombre;
-              checkbox.dataset.grado = grado + 1;
-              checkbox.dataset.index = i;
+              checkbox.dataset.grado = gradoIdx+1;
+              checkbox.dataset.cap = c.cap;
+              checkbox.dataset.tipo = c.tipo;
 
-              const key = `${tomoActual}-${materia.nombre}-${grado+1}-${i}`;
               if (estado[key]) {
                 checkbox.checked = true;
                 seleccionadas++;
               }
 
               checkbox.addEventListener("change", actualizarAvance);
-              td.appendChild(checkbox);
-            }
-            totalCasillas += num;
+
+              const label = document.createElement("label");
+              label.appendChild(checkbox);
+              label.appendChild(document.createTextNode(c.cap));
+              group.appendChild(label);
+
+              total++;
+            });
+            td.appendChild(group);
           }
           tr.appendChild(td);
         });
 
         const tdAvance = document.createElement("td");
         tdAvance.className = "avance";
-        tdAvance.textContent = totalCasillas > 0 ? `${Math.round((seleccionadas/totalCasillas)*100)}%` : "-";
+        tdAvance.textContent = total > 0 ? `${Math.round((seleccionadas/total)*100)}%` : "-";
         tr.appendChild(tdAvance);
+
         tbody.appendChild(tr);
       });
     }
 
-    // Guardar en Google Sheets
-    async function guardarEnSheets(tomo, materia, grado, index, seleccionado) {
+    async function guardarEnSheets(tomo, materia, grado, capitulo, tipo, seleccionado) {
       await fetch(SCRIPT_URL, {
         method: "POST",
-        body: JSON.stringify({ tomo, materia, grado, index, seleccionado })
+        body: JSON.stringify({ tomo, materia, grado, capitulo, tipo, seleccionado })
       });
     }
 
-    // Cargar desde Google Sheets filtrando solo el tomo actual
     async function cargarDesdeSheets() {
-      let res = await fetch(SCRIPT_URL);
+      let res = await fetch(`${SCRIPT_URL}?tomo=${tomoActual}`);
       let data = await res.json();
 
       estado = {};
       data.forEach(item => {
-        if (item.tomo === tomoActual) {
-          const key = `${item.tomo}-${item.materia}-${item.grado}-${item.index}`;
-          estado[key] = item.seleccionado === "true" || item.seleccionado === true;
-        }
+        const key = `${item.tomo}-${item.materia}-${item.grado}-${item.capitulo}`;
+        estado[key] = item.seleccionado === "true" || item.seleccionado === true;
       });
 
       construirTabla();
     }
 
-    // Actualizar avance al marcar/desmarcar
     function actualizarAvance(e) {
       const materia = e.target.dataset.materia;
       const grado = e.target.dataset.grado;
-      const index = e.target.dataset.index;
+      const capitulo = e.target.dataset.cap;
+      const tipo = e.target.dataset.tipo;
       const seleccionado = e.target.checked;
 
-      const key = `${tomoActual}-${materia}-${grado}-${index}`;
+      const key = `${tomoActual}-${materia}-${grado}-${capitulo}`;
       estado[key] = seleccionado;
 
-      guardarEnSheets(tomoActual, materia, grado, index, seleccionado);
-      construirTabla(); // refrescar % dinámicamente
+      guardarEnSheets(tomoActual, materia, grado, capitulo, tipo, seleccionado);
+      construirTabla();
     }
 
-    // Cambio de Tomo → recargar registros correspondientes
     document.getElementById("tomoSelect").addEventListener("change", e => {
       tomoActual = e.target.value;
-      cargarDesdeSheets(); 
+      cargarDesdeSheets();
     });
 
-    // Inicial
     window.onload = () => {
       cargarDesdeSheets();
     };
   </script>
+
 </body>
 </html>
