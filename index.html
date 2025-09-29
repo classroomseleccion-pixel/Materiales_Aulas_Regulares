@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Control de Entrega de PPT - Aulas Regulares</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 40px;
+      background: #f4f7fb;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    .controls {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    select {
+      padding: 8px 15px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+      vertical-align: middle;
+    }
+    th {
+      background: #34495e;
+      color: white;
+      font-weight: 600;
+    }
+    .avance {
+      font-weight: bold;
+      color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Control de Entrega de PPT - Aulas Regulares</h1>
+  <div class="controls">
+    <label for="tomoSelect"><b>Seleccione Tomo:</b></label>
+    <select id="tomoSelect">
+      <option value="Seleccionar">Seleccionar</option>
+      <option value="I">TOMO I</option>
+      <option value="II">TOMO II</option>
+      <option value="III">TOMO III</option>
+      <option value="IV">TOMO IV</option>
+      <option value="V">TOMO V</option>
+      <option value="VI">TOMO VI</option>
+      <option value="VII">TOMO VII</option>
+      <option value="VIII">TOMO VIII</option>
+    </select>
+  </div>
+
+  <table id="tablaAvance">
+    <thead>
+      <tr>
+        <th>Materia</th>
+        <th>1º</th>
+        <th>2º</th>
+        <th>3º</th>
+        <th>4º</th>
+        <th>5º</th>
+        <th>Avance</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // 🔹 URL de tu Apps Script desplegado
+    const SCRIPT_URL = "PEGAR_AQUI_TU_URL";
+
+    // Estructura de materias y casillas habilitadas
+    const materias = [
+
+       { nombre: "ECONOMÍA", grados: [0,0,1,1,1] },
+    { nombre: "GEOGRAFÍA", grados: [1,1,1,1,1] },
+    { nombre: "HISTORIA_DEL_PERÚ", grados: [1,1,1,1,1] },
+    { nombre: "HISTORIA_UNIVERSAL", grados: [0,0,1,1,1] },
+    { nombre: "PSICOLOGIA", grados: [0,0,1,1,1] },
+    { nombre: "VALORES", grados: [1,1,0,0,0] },
+    { nombre: "FORTALECIENDO MI FE", grados: [1,1,1,1,1] },
+    { nombre: "LENGUAJE", grados: [1,1,1,1,1] },
+    { nombre: "LITERATURA", grados: [1,1,1,1,1] },
+    { nombre: "RAZONAMIENTO_VERBAL", grados: [1,1,1,1,2] },
+    { nombre: "TEATRO", grados: [1,1,0,0,0] },
+    { nombre: "TUTORIA", grados: [1,1,1,1,1] },
+    { nombre: "BIOLOGÍA", grados: [1,1,1,1,1] },
+    { nombre: "FÍSICA", grados: [1,1,1,1,1] },
+    { nombre: "QUÍMICA", grados: [1,1,1,1,1] },
+    { nombre: "ÁLGEBRA", grados: [1,2,1,1,1] },
+    { nombre: "ARITMÉTICA", grados: [2,1,1,1,1] },
+    { nombre: "GEOMETRÍA", grados: [1,1,1,1,1] },
+    { nombre: "RAZONAMIENTO MATEMÁTICO", grados: [1,1,1,1,1] },
+    { nombre: "TRIGONOMETRÍA", grados: [1,1,1,1,1] }
+
+    ];
+
+    let tomoActual = "I";
+    let estado = {}; // { tomo-materia-grado-index: true/false }
+
+    // Construir tabla dinámicamente
+    function construirTabla() {
+      const tbody = document.querySelector("#tablaAvance tbody");
+      tbody.innerHTML = "";
+
+      materias.forEach(materia => {
+        const tr = document.createElement("tr");
+        const tdMateria = document.createElement("td");
+        tdMateria.textContent = materia.nombre;
+        tr.appendChild(tdMateria);
+
+        let totalCasillas = 0;
+        let seleccionadas = 0;
+
+        materia.grados.forEach((num, grado) => {
+          const td = document.createElement("td");
+          td.style.textAlign = "center";
+          if (num > 0) {
+            for (let i = 1; i <= num; i++) {
+              const checkbox = document.createElement("input");
+              checkbox.type = "checkbox";
+              checkbox.dataset.materia = materia.nombre;
+              checkbox.dataset.grado = grado + 1;
+              checkbox.dataset.index = i;
+
+              const key = `${tomoActual}-${materia.nombre}-${grado+1}-${i}`;
+              if (estado[key]) {
+                checkbox.checked = true;
+                seleccionadas++;
+              }
+
+              checkbox.addEventListener("change", actualizarAvance);
+              td.appendChild(checkbox);
+            }
+            totalCasillas += num;
+          }
+          tr.appendChild(td);
+        });
+
+        const tdAvance = document.createElement("td");
+        tdAvance.className = "avance";
+        tdAvance.textContent = totalCasillas > 0 ? `${Math.round((seleccionadas/totalCasillas)*100)}%` : "-";
+        tr.appendChild(tdAvance);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Guardar en Google Sheets
+    async function guardarEnSheets(tomo, materia, grado, index, seleccionado) {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ tomo, materia, grado, index, seleccionado })
+      });
+    }
+
+    // Cargar desde Google Sheets
+    async function cargarDesdeSheets() {
+      let res = await fetch(SCRIPT_URL);
+      let data = await res.json();
+      estado = {};
+      data.forEach(item => {
+        const key = `${item.tomo}-${item.materia}-${item.grado}-${item.index}`;
+        estado[key] = item.seleccionado === "true" || item.seleccionado === true;
+      });
+      construirTabla();
+    }
+
+    // Actualizar avance al marcar/desmarcar
+    function actualizarAvance(e) {
+      const materia = e.target.dataset.materia;
+      const grado = e.target.dataset.grado;
+      const index = e.target.dataset.index;
+      const seleccionado = e.target.checked;
+
+      const key = `${tomoActual}-${materia}-${grado}-${index}`;
+      estado[key] = seleccionado;
+
+      guardarEnSheets(tomoActual, materia, grado, index, seleccionado);
+
+      construirTabla(); // refrescar % dinámicamente
+    }
+
+    // Cambio de Tomo → limpiar vista y cargar datos correspondientes
+    document.getElementById("tomoSelect").addEventListener("change", e => {
+      tomoActual = e.target.value;
+      construirTabla();
+      cargarDesdeSheets(); 
+    });
+
+    // Inicial
+    window.onload = () => {
+      cargarDesdeSheets();
+    };
+  </script>
+</body>
+</html>
