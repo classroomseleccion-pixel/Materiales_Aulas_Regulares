@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Control de Entrega de PPT - Aulas Regulares</title>
+  <title>Material Aulas Regulares</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -52,11 +52,10 @@
   </style>
 </head>
 <body>
-  <h1>Control de Entrega de PPT - Aulas Regulares</h1>
+  <h1>Avance Académico</h1>
   <div class="controls">
     <label for="tomoSelect"><b>Seleccione Tomo:</b></label>
     <select id="tomoSelect">
-      <option value="Seleccionar">Seleccionar</option>
       <option value="I">TOMO I</option>
       <option value="II">TOMO II</option>
       <option value="III">TOMO III</option>
@@ -89,8 +88,7 @@
 
     // Estructura de materias y casillas habilitadas
     const materias = [
-
-       { nombre: "ECONOMÍA", grados: [0,0,1,1,1] },
+    { nombre: "ECONOMÍA", grados: [0,0,1,1,1] },
     { nombre: "GEOGRAFÍA", grados: [1,1,1,1,1] },
     { nombre: "HISTORIA_DEL_PERÚ", grados: [1,1,1,1,1] },
     { nombre: "HISTORIA_UNIVERSAL", grados: [0,0,1,1,1] },
@@ -110,7 +108,6 @@
     { nombre: "GEOMETRÍA", grados: [1,1,1,1,1] },
     { nombre: "RAZONAMIENTO MATEMÁTICO", grados: [1,1,1,1,1] },
     { nombre: "TRIGONOMETRÍA", grados: [1,1,1,1,1] }
-
     ];
 
     let tomoActual = "I";
@@ -171,21 +168,21 @@
       });
     }
 
-    // Cargar desde Google Sheets filtrando por tomo actual
-async function cargarDesdeSheets() {
-  let res = await fetch(SCRIPT_URL);
-  let data = await res.json();
+    // Cargar desde Google Sheets filtrando solo el tomo actual
+    async function cargarDesdeSheets() {
+      let res = await fetch(SCRIPT_URL);
+      let data = await res.json();
 
-  estado = {};
-  data.forEach(item => {
-    if (item.tomo === tomoActual) {
-      const key = `${item.tomo}-${item.materia}-${item.grado}-${item.index}`;
-      estado[key] = item.seleccionado === "true" || item.seleccionado === true;
+      estado = {};
+      data.forEach(item => {
+        if (item.tomo === tomoActual) {
+          const key = `${item.tomo}-${item.materia}-${item.grado}-${item.index}`;
+          estado[key] = item.seleccionado === "true" || item.seleccionado === true;
+        }
+      });
+
+      construirTabla();
     }
-  });
-
-  construirTabla();
-}
 
     // Actualizar avance al marcar/desmarcar
     function actualizarAvance(e) {
@@ -198,14 +195,12 @@ async function cargarDesdeSheets() {
       estado[key] = seleccionado;
 
       guardarEnSheets(tomoActual, materia, grado, index, seleccionado);
-
       construirTabla(); // refrescar % dinámicamente
     }
 
-    // Cambio de Tomo → limpiar vista y cargar datos correspondientes
+    // Cambio de Tomo → recargar registros correspondientes
     document.getElementById("tomoSelect").addEventListener("change", e => {
       tomoActual = e.target.value;
-      construirTabla();
       cargarDesdeSheets(); 
     });
 
